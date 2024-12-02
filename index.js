@@ -35,13 +35,17 @@ let tasks = [
 ];
 
 // GET /tasks - Get all tasks
-app.get('/tasks', (req, res) => {
-    res.json(tasks);
+app.get('/tasks', async(req, res) => {
+    const result = await Pool.query('SELECT * FROM tasks');
+    res.json(result.rows);
 });
 
 // POST /tasks - Add a new task
-app.post('/tasks', (request, response) => {
+app.post('/tasks', async (request, response) => {
     const { id, description, status } = request.body;
+    const result = await Pool.query(
+        'INSERT INTO tasks (description, status) VALUES ($1, &2) RETURNING *', [description, status]
+    );
     if (!id || !description || !status) {
         return response.status(400).json({ error: 'All fields (id, description, status) are required' });
     }
@@ -51,10 +55,13 @@ app.post('/tasks', (request, response) => {
 });
 
 // PUT /tasks/:id - Update a task's status
-app.put('/tasks/:id', (request, response) => {
+app.put('/tasks/:id', async (request, response) => {
     const taskId = parseInt(request.params.id, 10);
     const { status } = request.body;
     const task = tasks.find(t => t.id === taskId);
+    const result = await Pool.query('UPDATE tasks SET status = $1 WHERE id = $2 RETURNING *', 
+        [status, id]
+    );
 
     if (!task) {
         return response.status(404).json({ error: 'Task not found' });
@@ -64,17 +71,35 @@ app.put('/tasks/:id', (request, response) => {
 });
 
 // DELETE /tasks/:id - Delete a task
-app.delete('/tasks/:id', (request, response) => {
+// app.delete('/tasks/:id', async (request, response) => {
+//     const taskId = parseInt(request.params.id, 10);
+//     const initialLength = tasks.length;
+//     tasks = tasks.filter(t => t.id !== taskId);
+//     const resutl = await Pool.query('DELETE FROM tasks WHERE id = $1 RETURNING * ', [id]);
+
+//     if (tasks.length === initialLength) {
+//         return response.status(404).json({ error: 'Task not found' });
+//     }
+//     response.json({ message: 'Task deleted successfully' });
+// });
+
+
+app.delete('./tasks/:id', async (request, response) => {
     const taskId = parseInt(request.params.id, 10);
-    const initialLength = tasks.length;
-    tasks = tasks.filter(t => t.id !== taskId);
+    try {
+        const result = await Pool.query('DELETE FROM * tasks id = $1 RETURNIUNG *', [taskId]);
 
-    if (tasks.length === initialLength) {
-        return response.status(404).json({ error: 'Task not found' });
+        if (ressult.rowCount === 0) {
+            return response.status(404).json({ error: 'Task Not Found '});
+        }
+
+        response.json({ message: 'Task deleted', deletedTask: result.rows[0] });
+    } catch (error) { 
+        console.error('Error deleting task: ', error);
+        response.status(500).json({ error: "Failed to delete task"});
+
     }
-    response.json({ message: 'Task deleted successfully' });
 });
-
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
 });
