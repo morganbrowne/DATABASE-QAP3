@@ -4,6 +4,31 @@ const PORT = 3000;
 
 app.use(express.json());
 
+// Connect to MongoDB....
+const { mongoClient, MongoClient } = require('mongodb');
+
+const uri = 'mongodb://localhost:27017';
+const client = new MongoClient(uri);
+
+async function connectToDB() {
+    await client.connect();
+    console.log('MongoDB is Connected');
+    return client.db('QAP3');
+}
+module.exports = connectToDB;
+
+// Initilaize the collection...
+//const connectToDB = require('./db');
+let booksCollection;
+
+async function initializeDB() {
+    const db = await connectToDB();
+    booksCollection = db.collection('books');
+    console.log('Books Collection Ready.');
+}
+initializeDB();
+
+
 let tasks = [
     { id: 1, description: 'Buy groceries', status: 'incomplete' },
     { id: 2, description: 'Read a book', status: 'complete' },
