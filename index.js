@@ -33,36 +33,22 @@ const { MongoClient } = require('mongodb');
 const uri = 'mongodb://localhost:27017';
 const client = new MongoClient(uri);
 
+
 async function connectToMongo() {
-    try{
+    try {
         await client.connect();
         const db = client.db('QAP3');
-        booksCollection = db.collection('books');
+        const booksCollection = db.collection('books');
 
-        // Make sure the collection exists
-        await booksCollection.createIndex({title: 1}, {unique: true});
-        console.log('Connected to MongoDB');
+        // Ensure the collection has an index
+        await booksCollection.createIndex({ title: 1 }, { unique: true });
+        console.log('Connected to MongoDB and Books Collection ready.');
     } catch (error) {
         console.error('Error connecting to MongoDB:', error);
     }
 }
+
 connectToMongo();
-
-// Initilaize the collection...
-let booksCollection;
-
-async function initializeDB() {
-    const db = await connectToMongo();
-    //booksCollection = db.collection('books');
-    console.log('Books Collection Ready.');
-}
-initializeDB();
-
-
-// let tasks = [
-//     { id: 1, description: 'Buy groceries', status: 'incomplete' },
-//     { id: 2, description: 'Read a book', status: 'complete' },
-// ];
 
 // GET /tasks - Get all tasks
 app.get('/tasks', async (req, res) => {
@@ -72,7 +58,7 @@ app.get('/tasks', async (req, res) => {
 
 // POST /tasks - Add a new task
 app.post('/tasks', async (request, response) => {
-    const { id, description, status } = request.body;
+    const { description, status } = request.body;
 
     if (!description || description.trim() === '' || !status || status.trim() === '') {
         return response.status(400).json({ error: 'Both description and status are required.'});
